@@ -1,16 +1,19 @@
-extends Node
+tool
+extends EditorPlugin
 
-
-# Declare member variables here. Examples:
-# var a = 2
-# var b = "text"
-
-
-# Called when the node enters the scene tree for the first time.
-func _ready():
-	pass # Replace with function body.
-
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
-#	pass
+func _enter_tree():
+	add_custom_type(
+		"StateMachine", "Node",
+		preload("res://addons/godot-state-machine/godot_state_machine.gd"),
+		preload("res://addons/godot-state-machine/icon.png")
+	)
+	
+	add_custom_type(
+		"State", "Node",
+		preload("res://addons/godot-state-machine/godot_state.gd"),
+		preload("res://addons/godot-state-machine/icon.png")
+	)
+	
+func _exit_tree():
+	remove_custom_type("StateMachine")
+	remove_custom_type("State")
