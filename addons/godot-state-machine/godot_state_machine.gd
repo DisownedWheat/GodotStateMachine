@@ -1,7 +1,5 @@
 extends Node
 
-class_name StateMachine
-
 var _states: Dictionary
 var current_state: State
 var current_state_name: String
