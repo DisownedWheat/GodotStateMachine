@@ -1,4 +1,5 @@
 extends Node
+class_name State
 
 signal change_state(next_state_name)
 

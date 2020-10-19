@@ -1,4 +1,5 @@
 extends Node
+class_name StateMachine
 
 var _states: Dictionary
 var current_state: State
@@ -29,7 +30,7 @@ func change_state(state_name: String, push=false):
 	if state_name != "previous" and not state_name in _states:
 		push_error("State not in state dictionary: " + state_name)
 		return
-	
+
 	if current_state:
 		current_state.exit()
 	if state_name == "previous":
@@ -39,7 +40,7 @@ func change_state(state_name: String, push=false):
 	else:
 		var new_state = _states[state_name]
 		state_stack.push_front(new_state)
-	
+
 	current_state = state_stack.pop_front()
 	current_state_name = state_name
 	if state_name != "previous":
