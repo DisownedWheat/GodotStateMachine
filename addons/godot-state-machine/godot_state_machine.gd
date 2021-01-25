@@ -3,46 +3,58 @@ class_name StateMachine
 
 var _states: Dictionary
 var current_state: State
+var previous_state: State
 var current_state_name: String
-var state_stack = []
+var previous_state_name: String
 
-signal state_changed(state_stack)
+var process = true
 
-func _ready():
+signal state_changed(new_state_name, previous_state_name)
+signal init
+
+func init():
 	for child in get_children():
 		if not (child is State):
 			continue
 		_states[child.name.to_lower()] = child
 		if not child.has_signal("change_state"):
 			push_error("State does not have change_state signal: " + child.name)
-		child.connect("change_state", self, 'change_state')
+		child.connect("change_state", self, "change_state")
 		if child.name == "Idle":
 			current_state = child
 			current_state.enter()
+	emit_signal("init")
 
-func _physics_process(delta):
+func update(delta):
+	if not process:
+		return
 	if current_state == null:
 		return
 	current_state.update(delta)
 
-func change_state(state_name: String, push=false):
+func get_states():
+	return _states.keys()
+
+func change_state(state_name: String):
 	state_name = state_name.to_lower()
 	if state_name != "previous" and not state_name in _states:
 		push_error("State not in state dictionary: " + state_name)
 		return
 
+	if state_name != 'previous' and state_name == current_state_name:
+		push_warning("Calling state change with current state: ", current_state_name, "->", state_name)
+		return
+
 	if current_state:
 		current_state.exit()
 	if state_name == "previous":
-		state_stack.pop_front()
-	if push:
-		state_stack.push_front(_states[state_name])
+		current_state = previous_state
+		previous_state = null
+		previous_state_name = ""
 	else:
-		var new_state = _states[state_name]
-		state_stack.push_front(new_state)
-
-	current_state = state_stack.pop_front()
+		previous_state = current_state
+		current_state = _states[state_name]
+		previous_state_name = current_state_name
 	current_state_name = state_name
-	if state_name != "previous":
-		current_state.enter()
-	emit_signal("state_changed", state_stack)
+	current_state.enter()
+	emit_signal("state_changed", state_name, previous_state_name)
