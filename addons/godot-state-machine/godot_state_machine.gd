@@ -25,7 +25,7 @@ func init():
 			current_state.enter()
 	emit_signal("init")
 
-func update(delta):
+func update(delta: float):
 	if not process:
 		return
 	if current_state == null:
@@ -42,7 +42,7 @@ func change_state(state_name: String):
 		return
 
 	if state_name != 'previous' and state_name == current_state_name:
-		push_warning("Calling state change with current state: ", current_state_name, "->", state_name)
+		push_warning("Calling state change with current state: " + current_state_name + "->" + state_name)
 		return
 
 	if current_state:
