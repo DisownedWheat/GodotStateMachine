@@ -1,5 +1,5 @@
-extends Node
 class_name StateMachine
+extends Node
 
 var _states: Dictionary
 var current_state: State
@@ -9,17 +9,17 @@ var previous_state_name: String
 
 var process = true
 
-signal state_changed(new_state_name, previous_state_name)
-signal init
+signal state_changed(new_state_name: String, previous_state_name: String)
+signal initialised
 
-func init():
+func init() -> void:
 	for child in get_children():
 		if not (child is State):
 			continue
 		_states[child.name.to_lower()] = child
 		if not child.has_signal("change_state"):
 			push_error("State does not have change_state signal: " + child.name)
-		child.connect("change_state", self, "change_state")
+		child.connect("change_state", change_state)
 		if child.name == "Idle":
 			current_state = child
 			current_state.enter()
