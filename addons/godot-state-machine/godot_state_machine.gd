@@ -8,7 +8,7 @@ var current_state_name: String
 var previous_state_name: String
 
 @export var process = true
-@export var shared_state: Resource
+@export var shared_state: SharedState
 
 signal state_changed(new_state_name: String, previous_state_name: String)
 signal initialised
