@@ -3,17 +3,25 @@ extends Node
 
 signal change_state(next_state_name)
 
-func enter():
+@onready var machine: StateMachine = get_parent()
+@onready var shared_state: Resource = get_parent().shared_state
+
+
+func enter() -> void:
 	return
 
-func exit():
+
+func exit() -> void:
 	return
 
-func handle_input(event: InputEvent):
+
+func handle_input(event: InputEvent) -> void:
 	return
 
-func update(delta: float):
+
+func update(delta: float) -> void:
 	return
 
-func _on_animation_finished(anim_name: String):
+
+func _on_animation_finished(anim_name: String) -> void:
 	return

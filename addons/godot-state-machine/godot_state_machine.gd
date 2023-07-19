@@ -7,10 +7,12 @@ var previous_state: State
 var current_state_name: String
 var previous_state_name: String
 
-var process = true
+@export var process = true
+@export var shared_state: Resource
 
 signal state_changed(new_state_name: String, previous_state_name: String)
 signal initialised
+
 
 func init() -> void:
 	for child in get_children():
@@ -25,6 +27,7 @@ func init() -> void:
 			current_state.enter()
 	emit_signal("init")
 
+
 func update(delta: float):
 	if not process:
 		return
@@ -32,8 +35,10 @@ func update(delta: float):
 		return
 	current_state.update(delta)
 
+
 func get_states():
 	return _states.keys()
+
 
 func change_state(state_name: String):
 	state_name = state_name.to_lower()
@@ -41,8 +46,10 @@ func change_state(state_name: String):
 		push_error("State not in state dictionary: " + state_name)
 		return
 
-	if state_name != 'previous' and state_name == current_state_name:
-		push_warning("Calling state change with current state: " + current_state_name + "->" + state_name)
+	if state_name != "previous" and state_name == current_state_name:
+		push_warning(
+			"Calling state change with current state: " + current_state_name + "->" + state_name
+		)
 		return
 
 	if current_state:
