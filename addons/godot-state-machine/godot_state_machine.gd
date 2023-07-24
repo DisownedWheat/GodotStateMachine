@@ -8,9 +8,8 @@ var current_state_name: String
 var previous_state_name: String
 
 @export var process = true
-@export var shared_state: SharedState
 
-signal state_changed(new_state_name: String, previous_state_name: String)
+signal state_changed(new_state: State, previous_state: State)
 signal initialised
 
 
@@ -24,8 +23,8 @@ func init() -> void:
 		child.connect("change_state", change_state)
 		if child.name == "Idle":
 			current_state = child
-			current_state.enter()
-	emit_signal("init")
+			current_state.enter(null)
+	initialised.emit()
 
 
 func update(delta: float):
@@ -52,16 +51,16 @@ func change_state(state_name: String):
 		)
 		return
 
-	if current_state:
-		current_state.exit()
 	if state_name == "previous":
+		current_state.exit(previous_state)
 		current_state = previous_state
 		previous_state = null
 		previous_state_name = ""
 	else:
 		previous_state = current_state
 		current_state = _states[state_name]
+		previous_state.exit(current_state)
 		previous_state_name = current_state_name
 	current_state_name = state_name
-	current_state.enter()
-	emit_signal("state_changed", state_name, previous_state_name)
+	current_state.enter(previous_state)
+	state_changed.emit(state_name, previous_state_name)
