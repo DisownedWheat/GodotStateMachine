@@ -1,18 +1,17 @@
 class_name State
 extends Node
 
-signal change_state(next_state_name)
+signal change_state(next_state_name: String)
 
-@onready var machine: StateMachine = get_parent()
-@onready var shared_state: Resource = get_parent().shared_state
-
-
-func enter() -> void:
-	return
+var active = false
 
 
-func exit() -> void:
-	return
+func enter(previous_state) -> void:
+	active = true
+
+
+func exit(next_state) -> void:
+	active = false
 
 
 func handle_input(event: InputEvent) -> void:
