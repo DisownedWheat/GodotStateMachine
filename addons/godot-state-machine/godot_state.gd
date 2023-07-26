@@ -24,3 +24,7 @@ func update(delta: float) -> void:
 
 func _on_animation_finished(anim_name: String) -> void:
 	return
+
+
+func connect_signals() -> void:
+	pass

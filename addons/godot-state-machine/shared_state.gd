@@ -1,2 +1,2 @@
 class_name SharedState
-extends Resource
+extends Node
