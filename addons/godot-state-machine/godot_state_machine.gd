@@ -22,16 +22,17 @@ var current_state_name: String
 var previous_state_name: String
 
 ## The resource for storing shared state. If you want this to be passed into the child states they must have a shared_state variable.
-var shared_state: SharedState 
+var shared_state: SharedState
 
-var _dirty_check = true
+var _dirty_check: bool = true
 
 ## If this is set to false then the state machine will not process any state changes, won't update the current state, and won't process any input events.
-@export var process = true
+@export var process: bool = true
 
 ## The script that will be used to create the shared state node. This will be create a new node inside the scene tree that is visible in the editor and the
 ## exported variables of that node will be able to be edited from inside there
-@export var shared_state_class: Script : set=_set_shared_state_script
+@export var shared_state_class: Script:
+	set = _set_shared_state_script
 
 ## Determine whhich method the update is to be called from.
 @export var state_process_mode: Process_Mode = Process_Mode.PHYSICS
@@ -42,10 +43,10 @@ signal state_changed(new_state: State, previous_state: State)
 ## Sent when the state machine is initialised
 signal initialised
 
+
 ## This must be called at some point before the processing starts, otherwise the state machine will not work.
 ## It will iterate over all child nodes in the scene and add them to the state dictionary.
 func _ready() -> void:
-
 	_dirty_check = false
 
 	# If we're inside the editor we shouldn't do anything
@@ -58,7 +59,6 @@ func _ready() -> void:
 	# Iterate over the children and find all the states
 	for child in get_children():
 		if child is State:
-		
 			# Get the child node's name and add it to the state dictionary
 			_states[child.name.to_lower()] = child
 
@@ -67,11 +67,11 @@ func _ready() -> void:
 				push_error("State does not have change_state signal: " + child.name)
 
 			# If the child has a shared_state variable then set it to the shared_state variable of this node
-			# This will only happen if the state node inherits from State and adds its own shared_state variable, but it isn't 
+			# This will only happen if the state node inherits from State and adds its own shared_state variable, but it isn't
 			# strictly necessary
 			if "shared_state" in child:
 				child.shared_state = shared_state
-			
+
 			# Connect to the change_state signal, and connect any signals that the child node requires
 			child.change_state.connect(_change_state)
 			child.connect_signals()
@@ -82,7 +82,7 @@ func _ready() -> void:
 				current_state.enter(null)
 		if child is StateMachine:
 			pass
-			
+
 	# If no current state has been set then just take the first state available and use that
 	if current_state == null:
 		for child in get_children():
@@ -96,7 +96,7 @@ func _ready() -> void:
 
 
 ## This is just a bit of a helper function for checking whether we want the update to run
-func update(delta: float):
+func update(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
 	if not initialised:
@@ -109,13 +109,13 @@ func update(delta: float):
 
 
 ## Returns all the names of the states in the state machine.
-func get_states():
+func get_states() -> Array[String]:
 	return _states.keys()
 
 
 ## Private function that handles all the state changes, this will only get called when a child state emits its change_state signal
 ## This function accepts either the name of the state to change to, or "previous" to go back to the previous state.
-func _change_state(state_name: String):
+func _change_state(state_name: String) -> void:
 	if not initialised:
 		return
 	state_name = state_name.to_lower()
@@ -200,19 +200,18 @@ func _set_shared_state_script(shared_state_script: Script) -> void:
 		return
 	shared_state_class = shared_state_script
 
-	# If a SharedState node is already present then we should remove it first
-	var child = find_child("SharedState")
-	print(child)
-	if child != null:
-		remove_child(child)
-		child.queue_free()
-
 	# Then we create the new shared state and add it to the scene tree
 	var tmp_shared_state = shared_state_class.new()
 	if not tmp_shared_state is SharedState:
 		push_error("Shared state script does not inherit from SharedState")
 		return
+
+	# If a SharedState node is already present then we should remove it first
+	var child = find_child("SharedState")
+	if child != null:
+		remove_child(child)
+		child.queue_free()
+
 	add_child(tmp_shared_state)
 	tmp_shared_state.set_owner(owner)
 	tmp_shared_state.name = "SharedState"
-
