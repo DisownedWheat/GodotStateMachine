@@ -1,10 +1,6 @@
 ## A state machine that can be assigned to anything and uses its child nodes in the scene tree to keep track of and add/remove functionality
-@tool
 class_name StateMachine
 extends Node
-
-## Sets which process engine method the state machine will use to update the current state.
-enum Process_Mode { IDLE, PHYSICS, BOTH }
 
 ## Dictionary for holding all the states mapped to their names.
 var _states: Dictionary
@@ -21,21 +17,7 @@ var current_state_name: String
 ## The name of the previous state.
 var previous_state_name: String
 
-## The resource for storing shared state. If you want this to be passed into the child states they must have a shared_state variable.
-var shared_state: SharedState
-
-var _dirty_check: bool = true
-
-## If this is set to false then the state machine will not process any state changes, won't update the current state, and won't process any input events.
-@export var process: bool = true
-
-## The script that will be used to create the shared state node. This will be create a new node inside the scene tree that is visible in the editor and the
-## exported variables of that node will be able to be edited from inside there
-@export var shared_state_class: Script:
-	set = _set_shared_state_script
-
-## Determine whhich method the update is to be called from.
-@export var state_process_mode: Process_Mode = Process_Mode.PHYSICS
+@export var actor: Node
 
 ## Signal sent when any state change occurs
 signal state_changed(new_state: State, previous_state: State)
@@ -43,22 +25,17 @@ signal state_changed(new_state: State, previous_state: State)
 ## Sent when the state machine is initialised
 signal initialised
 
+var _states_array: Array[State] = []
+
 
 ## This must be called at some point before the processing starts, otherwise the state machine will not work.
 ## It will iterate over all child nodes in the scene and add them to the state dictionary.
 func _ready() -> void:
-	_dirty_check = false
-
-	# If we're inside the editor we shouldn't do anything
-	if Engine.is_editor_hint():
-		return
-
-	# Find the shared state node if it exists
-	shared_state = find_child("SharedState")
-
 	# Iterate over the children and find all the states
 	for child in get_children():
 		if child is State:
+			_states_array.append(child)
+
 			# Get the child node's name and add it to the state dictionary
 			_states[child.name.to_lower()] = child
 
@@ -69,47 +46,24 @@ func _ready() -> void:
 			# If the child has a shared_state variable then set it to the shared_state variable of this node
 			# This will only happen if the state node inherits from State and adds its own shared_state variable, but it isn't
 			# strictly necessary
-			if "shared_state" in child:
-				child.shared_state = shared_state
+			if "actor" in child:
+				child.actor = actor
 
 			# Connect to the change_state signal, and connect any signals that the child node requires
 			child.change_state.connect(_change_state)
 			child.connect_signals()
 
-			# If the child node is the idle state then set it as the current state
-			if child.name == "Idle":
-				current_state = child
-				current_state.enter(null)
+		# TODO: Handle child state machines
 		if child is StateMachine:
 			pass
 
-	# If no current state has been set then just take the first state available and use that
-	if current_state == null:
-		for child in get_children():
-			if not (child is State):
-				continue
-			current_state = child
-			current_state.enter(null)
-			break
+	_change_state(_states_array.front().name.to_lower())
 
 	initialised.emit()
 
 
-## This is just a bit of a helper function for checking whether we want the update to run
-func update(delta: float) -> void:
-	if Engine.is_editor_hint():
-		return
-	if not initialised:
-		return
-	if not process:
-		return
-	if current_state == null:
-		return
-	current_state.update(delta)
-
-
 ## Returns all the names of the states in the state machine.
-func get_states() -> Array[String]:
+func get_states():
 	return _states.keys()
 
 
@@ -137,7 +91,8 @@ func _change_state(state_name: String) -> void:
 	else:
 		previous_state = current_state
 		current_state = _states[state_name]
-		previous_state.exit(current_state)
+		if previous_state != null:
+			previous_state.exit(current_state)
 		previous_state_name = current_state_name
 	current_state_name = state_name
 	current_state.enter(previous_state)
@@ -153,8 +108,8 @@ func add_state(state: State) -> void:
 	if not state.has_signal("change_state"):
 		push_error("State does not have change_state signal: " + state.name)
 	state.change_state.connect(_change_state)
-	if "shared_state" in state:
-		state.shared_state = shared_state
+	if "actor" in state:
+		state.actor = actor
 	add_child(state)
 
 
@@ -181,37 +136,3 @@ func remove_state_node(state: State) -> void:
 		push_error("State is null")
 		return
 	remove_state(state.name)
-
-
-func _physics_process(delta: float) -> void:
-	if state_process_mode == Process_Mode.PHYSICS or state_process_mode == Process_Mode.BOTH:
-		update(delta)
-
-
-func _process(delta: float) -> void:
-	if state_process_mode == Process_Mode.IDLE or state_process_mode == Process_Mode.BOTH:
-		update(delta)
-
-
-## Private method that is called when the shared_state_script is added to the state machine. This will create a new node in the scene tree
-## and shouldn't be called at runtime
-func _set_shared_state_script(shared_state_script: Script) -> void:
-	if _dirty_check:
-		return
-	shared_state_class = shared_state_script
-
-	# Then we create the new shared state and add it to the scene tree
-	var tmp_shared_state = shared_state_class.new()
-	if not tmp_shared_state is SharedState:
-		push_error("Shared state script does not inherit from SharedState")
-		return
-
-	# If a SharedState node is already present then we should remove it first
-	var child = find_child("SharedState")
-	if child != null:
-		remove_child(child)
-		child.queue_free()
-
-	add_child(tmp_shared_state)
-	tmp_shared_state.set_owner(owner)
-	tmp_shared_state.name = "SharedState"
