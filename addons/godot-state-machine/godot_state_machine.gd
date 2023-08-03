@@ -17,12 +17,13 @@ var current_state_name: String
 ## The name of the previous state.
 var previous_state_name: String
 
+## The actor that contains all the shared state of the object, this will usually be a physics body that the states act upon.
 @export var actor: Node
 
-## Signal sent when any state change occurs
+## Signal emitted when any state change occurs.
 signal state_changed(new_state: State, previous_state: State)
 
-## Sent when the state machine is initialised
+## Emitted when the state machine is initialised.
 signal initialised
 
 var _states_array: Array[State] = []
@@ -57,7 +58,7 @@ func _ready() -> void:
 		if child is StateMachine:
 			pass
 
-	_change_state(_states_array.front().name.to_lower())
+	_change_state.call_deferred(_states_array.front().name.to_lower())
 
 	initialised.emit()
 
